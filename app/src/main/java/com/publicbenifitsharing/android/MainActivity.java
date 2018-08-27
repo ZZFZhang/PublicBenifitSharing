@@ -20,6 +20,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.publicbenifitsharing.android.adapter.MyFragmentPagerAdapter;
+import com.publicbenifitsharing.android.entityclass.TencentSession;
 import com.publicbenifitsharing.android.viewpager.DynamicPage;
 import com.publicbenifitsharing.android.viewpager.HomePage;
 import com.publicbenifitsharing.android.viewpager.ProjectPage;
@@ -30,6 +31,8 @@ import com.tencent.tauth.Tencent;
 import com.tencent.tauth.UiError;
 
 import org.json.JSONObject;
+import org.litepal.LitePal;
+import org.litepal.crud.LitePalSupport;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -132,6 +135,7 @@ public class MainActivity extends AppCompatActivity {
                     case R.id.login_out:
                         mTencent.logout(getApplicationContext());
                         updateUserInfo();
+                        LitePal.deleteAll(TencentSession.class);
                         break;
                 }
                 return true;
@@ -141,11 +145,22 @@ public class MainActivity extends AppCompatActivity {
         drawerLayout.setDrawerLockMode(DrawerLayout.LOCK_MODE_LOCKED_CLOSED);
         mTencent=Tencent.createInstance(TencentAppId,this.getApplicationContext());
 
-        if (mTencent.checkSessionValid(TencentAppId)){
+        /*if (mTencent.checkSessionValid(TencentAppId)){
             mTencent.initSessionCache(mTencent.loadSession(TencentAppId));//源码显示验证mTencent.setAccessToken  mTencent.setOpenId
             updateUserInfo();
         }else {
             Toast.makeText(this, "Token已过期，请重新登录！", Toast.LENGTH_SHORT).show();
+        }*/
+        TencentSession tencentSession= LitePal.find(TencentSession.class,1);
+        if (tencentSession!=null){
+            long currentTime=System.currentTimeMillis();
+            if (currentTime<tencentSession.getExpiresTime()){
+                mTencent.setAccessToken(tencentSession.getAccessToken(),tencentSession.getExpiresIn());
+                mTencent.setOpenId(tencentSession.getOpenId());
+                updateUserInfo();
+            }else{
+                Toast.makeText(this,"Token已过期,请重新登录!",Toast.LENGTH_SHORT).show();
+            }
         }
 
         headIconSmall.setOnClickListener(new View.OnClickListener() {
@@ -194,6 +209,13 @@ public class MainActivity extends AppCompatActivity {
                 mTencent.setOpenId(openId);
                 mTencent.setAccessToken(accessToken,expires);
                 updateUserInfo();
+
+                TencentSession tencentSession=new TencentSession();
+                tencentSession.setAccessToken(accessToken);
+                tencentSession.setOpenId(openId);
+                tencentSession.setExpiresIn(expires);
+                tencentSession.setExpiresTime(Long.parseLong(expiresTime));
+                tencentSession.save();
             }catch (Exception e){
                 e.printStackTrace();
             }
