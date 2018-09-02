@@ -12,6 +12,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.app.ProgressDialog;
+import android.widget.Toast;
 
 import com.bumptech.glide.Glide;
 import com.google.gson.Gson;
@@ -21,6 +22,7 @@ import com.publicbenifitsharing.android.MainActivity;
 import com.publicbenifitsharing.android.R;
 import com.publicbenifitsharing.android.adapter.ProjectRecycleViewAdapter;
 import com.publicbenifitsharing.android.entityclass.Project;
+import com.publicbenifitsharing.android.util.DBService;
 import com.publicbenifitsharing.android.util.HttpUtil;
 
 import java.io.IOException;
@@ -34,14 +36,23 @@ import okhttp3.Request;
 import okhttp3.Response;
 
 public class ProjectPage extends Fragment {
-    private SwipeRefreshLayout swipeRefresh;
+    public SwipeRefreshLayout swipeRefresh;
     private RecyclerView recyclerView;
     private ProjectRecycleViewAdapter adapter;
     private ProgressDialog progressDialog;
 
     private List<Project> projectList=new ArrayList<>();
 
-    private static final String TAG = "ProjectPage";
+    public boolean isLoad=false;
+    public static boolean reLoad=false;
+    @Override
+    public void setUserVisibleHint(boolean isVisibleToUser) {
+        if (isVisibleToUser){
+            if (!isLoad){
+                getDataFromServer();
+            }
+        }
+    }
 
     @Nullable
     @Override
@@ -59,7 +70,6 @@ public class ProjectPage extends Fragment {
     @Override
     public void onActivityCreated(@Nullable Bundle savedInstanceState) {
         super.onActivityCreated(savedInstanceState);
-        getDataFromServer();
         swipeRefresh.setColorSchemeResources(R.color.colorPrimary);
         swipeRefresh.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
             @Override
@@ -69,29 +79,35 @@ public class ProjectPage extends Fragment {
         });
     }
 
-    private void getDataFromServer(){
-        HttpUtil.sendOkHttpRequest("http://" + MainActivity.serverId + "/project.json", new Callback() {
-            @Override
-            public void onFailure(Call call, IOException e) {
+    @Override
+    public void onResume() {
+        if (reLoad){
+            getDataFromServer();
+            reLoad=false;
+        }
+        super.onResume();
+    }
 
-            }
-
+    public void getDataFromServer(){
+        swipeRefresh.setRefreshing(true);
+        new Thread(new Runnable() {
             @Override
-            public void onResponse(Call call, Response response) throws IOException {
-                byte[] bytes=response.body().bytes();
-                final String responseData=new String(bytes,"GB2312");
-                Log.d(TAG, "onResponse: "+responseData);
+            public void run() {
+                projectList.clear();
+                DBService dbService=DBService.getDbService();
+                projectList.addAll(dbService.getProjectData());
                 getActivity().runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
-                        projectList.clear();
-                        List<Project> list=new Gson().fromJson(responseData,new TypeToken<List<Project>>(){}.getType());
-                        projectList.addAll(list);
                         adapter.notifyDataSetChanged();
                         swipeRefresh.setRefreshing(false);
+                        if (projectList.size()==0){
+                            Toast.makeText(getContext(), "连接超时！", Toast.LENGTH_SHORT).show();
+                        }
+                        isLoad=true;
                     }
                 });
             }
-        });
+        }).start();
     }
 }

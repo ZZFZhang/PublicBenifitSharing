@@ -15,12 +15,14 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import com.publicbenifitsharing.android.adapter.MyFragmentPagerAdapter;
 import com.publicbenifitsharing.android.entityclass.TencentSession;
+import com.publicbenifitsharing.android.entityclass.TencentUserInfo;
 import com.publicbenifitsharing.android.viewpager.DynamicPage;
 import com.publicbenifitsharing.android.viewpager.HomePage;
 import com.publicbenifitsharing.android.viewpager.ProjectPage;
@@ -33,6 +35,7 @@ import com.tencent.tauth.UiError;
 import org.json.JSONObject;
 import org.litepal.LitePal;
 import org.litepal.crud.LitePalSupport;
+import org.w3c.dom.Text;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -42,6 +45,7 @@ public class MainActivity extends AppCompatActivity {
     private DrawerLayout drawerLayout;
     private ImageView headIconSmall;
     private TextView titleText;
+    private Button upload;
     private ViewPager viewPager;
     private TabLayout tabLayout;
     private NavigationView navigationView;
@@ -64,7 +68,7 @@ public class MainActivity extends AppCompatActivity {
     private Tencent mTencent;
     private String TencentAppId="1107469874";
 
-    public static String serverId="192.168.0.105";
+    public static String serverId="172.27.35.1";
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -72,6 +76,7 @@ public class MainActivity extends AppCompatActivity {
         drawerLayout=(DrawerLayout) findViewById(R.id.drawer_layout);
         headIconSmall=(ImageView) findViewById(R.id.head_icon);
         titleText=(TextView) findViewById(R.id.title_text);
+        upload=(Button) findViewById(R.id.upload);
         viewPager=(ViewPager) findViewById(R.id.view_pager);
         tabLayout=(TabLayout) findViewById(R.id.tab_layout);
         navigationView=(NavigationView) findViewById(R.id.nav_view);
@@ -120,6 +125,40 @@ public class MainActivity extends AppCompatActivity {
                         textView.setTextColor(getResources().getColor(R.color.colorTitleTabLayout));
                     }
                 }
+
+                if (isLogin){
+                    switch (position){
+                        case 0:
+                            upload.setVisibility(View.INVISIBLE);
+                            break;
+                        case 1:
+                            upload.setVisibility(View.VISIBLE);
+                            if (isLogin){
+                                upload.setOnClickListener(new View.OnClickListener() {
+                                    @Override
+                                    public void onClick(View v) {
+                                        Intent startUploadProject=new Intent(MainActivity.this,UploadProjectActivity.class);
+                                        startActivityForResult(startUploadProject,2);
+                                    }
+                                });
+                            }
+                            break;
+                        case 2:
+                            upload.setVisibility(View.VISIBLE);
+                            if (isLogin){
+                                upload.setOnClickListener(new View.OnClickListener(){
+                                    @Override
+                                    public void onClick(View v) {
+                                        Intent startUploadDynamic=new Intent(MainActivity.this,UploadDynamicActivity.class);
+                                        startActivityForResult(startUploadDynamic,1);
+                                    }
+                                });
+                            }
+                            break;
+                        default:
+                            break;
+                    }
+                }
             }
 
             @Override
@@ -136,6 +175,17 @@ public class MainActivity extends AppCompatActivity {
                         mTencent.logout(getApplicationContext());
                         updateUserInfo();
                         LitePal.deleteAll(TencentSession.class);
+                        LitePal.deleteAll(TencentUserInfo.class);
+                        break;
+                    case R.id.my_project:
+                        Intent startMyProjectView=new Intent(MainActivity.this,MyProjectViewActivity.class);
+                        startActivity(startMyProjectView);
+                        break;
+                    case R.id.my_dynamic:
+                        Intent startMyDynamicView=new Intent(MainActivity.this,MyDynamicViewActivity.class);
+                        startActivity(startMyDynamicView);
+                        break;
+                    default:
                         break;
                 }
                 return true;
@@ -151,12 +201,12 @@ public class MainActivity extends AppCompatActivity {
         }else {
             Toast.makeText(this, "Token已过期，请重新登录！", Toast.LENGTH_SHORT).show();
         }*/
-        TencentSession tencentSession= LitePal.find(TencentSession.class,1);
-        if (tencentSession!=null){
+        List<TencentSession> tencentSessionList= LitePal.findAll(TencentSession.class);
+        if (tencentSessionList.size()!=0){
             long currentTime=System.currentTimeMillis();
-            if (currentTime<tencentSession.getExpiresTime()){
-                mTencent.setAccessToken(tencentSession.getAccessToken(),tencentSession.getExpiresIn());
-                mTencent.setOpenId(tencentSession.getOpenId());
+            if (currentTime<tencentSessionList.get(0).getExpiresTime()){
+                mTencent.setAccessToken(tencentSessionList.get(0).getAccessToken(), tencentSessionList.get(0).getExpiresIn());
+                mTencent.setOpenId(tencentSessionList.get(0).getOpenId());
                 updateUserInfo();
             }else{
                 Toast.makeText(this,"Token已过期,请重新登录!",Toast.LENGTH_SHORT).show();
@@ -255,6 +305,18 @@ public class MainActivity extends AppCompatActivity {
                         GlideApp.with(getApplicationContext()).load(figureUrl).into(headIconBig);
                         userName.setText(nickName);
                         describe.setText(describeText);
+
+                        TencentUserInfo tencentUserInfo=LitePal.find(TencentUserInfo.class,1);
+                        if (tencentUserInfo==null){
+                            TencentUserInfo tencentUserInfo1=new TencentUserInfo();
+                            tencentUserInfo1.setUserName(nickName);
+                            tencentUserInfo1.setHeadIconUrl(figureUrl);
+                            tencentUserInfo1.save();
+                        }else {
+                            tencentUserInfo.setUserName(nickName);
+                            tencentUserInfo.setHeadIconUrl(figureUrl);
+                            tencentUserInfo.save();
+                        }
                     }catch(Exception e){
                         e.printStackTrace();
                     }
@@ -292,6 +354,30 @@ public class MainActivity extends AppCompatActivity {
             Tencent.onActivityResultData(requestCode,resultCode,data,loginListener);
         }
 
+        switch(requestCode){
+            case 1:
+                if (resultCode==RESULT_OK){
+                    boolean returnedData=data.getBooleanExtra("data_return",false);
+                    if (returnedData){
+                        dynamicPageFragment.swipeRefreshLayout.setRefreshing(true);
+                        dynamicPageFragment.getDataFromServer();
+                        Toast.makeText(this, "发表成功", Toast.LENGTH_SHORT).show();
+                    }
+                }
+                break;
+            case 2:
+                if (resultCode==RESULT_OK){
+                    boolean returnedData=data.getBooleanExtra("data_return",false);
+                    if (returnedData){
+                        projectPageFragment.swipeRefresh.setRefreshing(true);
+                        projectPageFragment.getDataFromServer();
+                        Toast.makeText(this, "发表成功", Toast.LENGTH_SHORT).show();
+                    }
+                }
+                break;
+            default:
+                break;
+        }
         super.onActivityResult(requestCode, resultCode, data);
     }
 }

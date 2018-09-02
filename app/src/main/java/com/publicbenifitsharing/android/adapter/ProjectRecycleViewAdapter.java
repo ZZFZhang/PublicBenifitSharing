@@ -65,7 +65,7 @@ public class ProjectRecycleViewAdapter extends RecyclerView.Adapter<ProjectRecyc
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
         Project project=projectList.get(position);
         holder.titleText.setText(project.getTitle());
-        GlideApp.with(context).load(project.getImageUrl()).skipMemoryCache(true).diskCacheStrategy(DiskCacheStrategy.NONE).into(holder.imageView);
+        GlideApp.with(context).load(project.getImageUrl()).signature(new ObjectKey(project.getReleaseTime())).into(holder.imageView);
     }
 
     private static final String TAG = "ProjectRecycleViewAdapt";

@@ -1,15 +1,18 @@
 package com.publicbenifitsharing.android;
 
+import android.content.Intent;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.support.v7.widget.Toolbar;
 import android.view.MenuItem;
+import android.view.View;
 import android.widget.ImageView;
 import android.widget.TextView;
 
 import com.bumptech.glide.load.engine.DiskCacheStrategy;
 import com.publicbenifitsharing.android.entityclass.Dynamic;
+
 
 public class DynamicView extends AppCompatActivity {
     private Toolbar toolbar;
@@ -61,8 +64,21 @@ public class DynamicView extends AppCompatActivity {
     private void showDynamic(Dynamic dynamic){
         GlideApp.with(getBaseContext()).load(dynamic.getHeadIconUrl()).skipMemoryCache(true).diskCacheStrategy(DiskCacheStrategy.NONE).into(headIcon);
         userName.setText(dynamic.getUserName());
-        releaseTime.setText(dynamic.getReleaseTime());
+        releaseTime.setText(dynamic.getReleaseDate());
         contentTitle.setText(dynamic.getContentTitle());
-        GlideApp.with(getBaseContext()).load(dynamic.getImageUrl()).skipMemoryCache(true).diskCacheStrategy(DiskCacheStrategy.NONE).into(imageView);
+        if (dynamic.getImageUrl()!=null){
+            GlideApp.with(getBaseContext()).load(dynamic.getImageUrl()).skipMemoryCache(true).diskCacheStrategy(DiskCacheStrategy.NONE).into(imageView);
+            imageView.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    Intent intent=new Intent(DynamicView.this,PhotoViewerActivity.class);
+                    intent.putExtra("image_url",dynamic.getImageUrl());
+                    intent.putExtra("release_time",dynamic.getReleaseTime());
+                    startActivity(intent);
+                }
+            });
+        }else{
+            imageView.setVisibility(View.GONE);
+        }
     }
 }

@@ -11,6 +11,7 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Toast;
 
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
@@ -18,6 +19,7 @@ import com.publicbenifitsharing.android.MainActivity;
 import com.publicbenifitsharing.android.R;
 import com.publicbenifitsharing.android.adapter.DynamicRecyclerViewAdapter;
 import com.publicbenifitsharing.android.entityclass.Dynamic;
+import com.publicbenifitsharing.android.util.DBService;
 import com.publicbenifitsharing.android.util.HttpUtil;
 
 import java.io.IOException;
@@ -29,10 +31,21 @@ import okhttp3.Callback;
 import okhttp3.Response;
 
 public class DynamicPage extends Fragment {
-    private SwipeRefreshLayout swipeRefreshLayout;
+    public SwipeRefreshLayout swipeRefreshLayout;
     private RecyclerView recyclerView;
     private DynamicRecyclerViewAdapter adapter;
     private List<Dynamic> dynamicList=new ArrayList<>();
+
+    public boolean isLoad=false;
+    public static boolean reLoad=false;
+    @Override
+    public void setUserVisibleHint(boolean isVisibleToUser) {
+        if (isVisibleToUser){
+            if (!isLoad){
+                getDataFromServer();
+            }
+        }
+    }
 
     @Nullable
     @Override
@@ -50,39 +63,44 @@ public class DynamicPage extends Fragment {
     @Override
     public void onActivityCreated(@Nullable Bundle savedInstanceState) {
         super.onActivityCreated(savedInstanceState);
-        getDataFromServer();
         swipeRefreshLayout.setColorSchemeResources(R.color.colorPrimary);
         swipeRefreshLayout.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
             @Override
             public void onRefresh() {
                 getDataFromServer();
-                swipeRefreshLayout.setRefreshing(false);
             }
         });
     }
 
-    private static final String TAG = "DynamicPage";
-    private void getDataFromServer(){
-        HttpUtil.sendOkHttpRequest("http://" + MainActivity.serverId + "/dynamic.json", new Callback() {
-            @Override
-            public void onFailure(Call call, IOException e) {
+    @Override
+    public void onResume() {
+        if (reLoad){
+            getDataFromServer();
+            reLoad=false;
+        }
+        super.onResume();
+    }
 
-            }
-
+    public void getDataFromServer(){
+        swipeRefreshLayout.setRefreshing(true);
+        new Thread(new Runnable() {
             @Override
-            public void onResponse(Call call, Response response) throws IOException {
-                byte[] bytes=response.body().bytes();//获取返回数据bytes
-                final String responseData=new String(bytes,"GB2312");//转变其编码方式GB2312，解决中文乱码问题
+            public void run() {
+                dynamicList.clear();
+                DBService dbService=DBService.getDbService();
+                dynamicList.addAll(dbService.getDynamicData());
                 getActivity().runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
-                        dynamicList.clear();
-                        List<Dynamic> list=new Gson().fromJson(responseData,new TypeToken<List<Dynamic>>(){}.getType());
-                        dynamicList.addAll(list);
                         adapter.notifyDataSetChanged();
+                        swipeRefreshLayout.setRefreshing(false);
+                        if (dynamicList.size()==0){
+                            Toast.makeText(getContext(), "连接超时！", Toast.LENGTH_SHORT).show();
+                        }
+                        isLoad=true;
                     }
                 });
             }
-        });
+        }).start();
     }
 }

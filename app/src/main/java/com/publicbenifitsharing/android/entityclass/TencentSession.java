@@ -2,7 +2,7 @@ package com.publicbenifitsharing.android.entityclass;
 
 import org.litepal.crud.LitePalSupport;
 
-public class TencentSession extends LitePalSupport {
+public class TencentSession extends LitePalSupport{
     private String accessToken;
     private String openId;
     private String expiresIn;

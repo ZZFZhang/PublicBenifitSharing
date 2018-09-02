@@ -1,5 +1,6 @@
 package com.publicbenifitsharing.android;
 
+import android.content.Intent;
 import android.graphics.Color;
 import android.os.Build;
 import android.support.design.widget.CollapsingToolbarLayout;
@@ -14,6 +15,7 @@ import android.widget.TextView;
 import android.support.v7.widget.Toolbar;
 
 import com.bumptech.glide.load.engine.DiskCacheStrategy;
+import com.bumptech.glide.signature.ObjectKey;
 import com.publicbenifitsharing.android.entityclass.Project;
 
 import java.util.Random;
@@ -48,8 +50,18 @@ public class ProjectView extends AppCompatActivity {
         }
         Project project=(Project) getIntent().getSerializableExtra(PROJECT_DATA);
         collapsingToolbarLayout.setTitle("详情");
-        GlideApp.with(getBaseContext()).load(project.getImageUrl()).skipMemoryCache(true).diskCacheStrategy(DiskCacheStrategy.NONE).into(imageView);
+        GlideApp.with(getBaseContext()).load(project.getImageUrl()).signature(new ObjectKey(project.getReleaseTime())).into(imageView);
         contentText.setText(project.getContentText());
+
+        imageView.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent intent=new Intent(ProjectView.this,PhotoViewerActivity.class);
+                intent.putExtra("image_url",project.getImageUrl());
+                intent.putExtra("release_time",project.getReleaseTime());
+                startActivity(intent);
+            }
+        });
     }
 
     @Override
