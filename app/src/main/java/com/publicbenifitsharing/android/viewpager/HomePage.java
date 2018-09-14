@@ -20,7 +20,7 @@ public class HomePage extends Fragment {
     private BannerView bannerView;
     private List<BannerBean> bannerBeanList;
 
-    private String[] banners=new String[]{"http://"+ MainActivity.serverId+"/banners/banner_view1.png","http://"+ MainActivity.serverId+"/banners/banner_view2.png","http://"+ MainActivity.serverId+"/banners/banner_view3.png","http://"+ MainActivity.serverId+"/banners/banner_view4.png"};
+    private String[] banners=new String[]{"http://"+ MainActivity.serverId+":8080/PBS/banners/banner_view1.png","http://"+ MainActivity.serverId+":8080/PBS/banners/banner_view2.png","http://"+ MainActivity.serverId+":8080/PBS/banners/banner_view3.png","http://"+ MainActivity.serverId+":8080/PBS/banners/banner_view4.png"};
 
     @Nullable
     @Override

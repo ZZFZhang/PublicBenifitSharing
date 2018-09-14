@@ -210,7 +210,6 @@ public class MainActivity extends AppCompatActivity {
                 updateUserInfo();
             }else{
                 Toast.makeText(this,"Token已过期,请重新登录!",Toast.LENGTH_SHORT).show();
-
             }
         }
 
@@ -305,6 +304,8 @@ public class MainActivity extends AppCompatActivity {
                         GlideApp.with(getApplicationContext()).load(figureUrl).into(headIconBig);
                         userName.setText(nickName);
                         describe.setText(describeText);
+                        isLogin=true;
+                        drawerLayout.setDrawerLockMode(DrawerLayout.LOCK_MODE_UNLOCKED);
 
                         TencentUserInfo tencentUserInfo=LitePal.find(TencentUserInfo.class,1);
                         if (tencentUserInfo==null){
@@ -334,8 +335,6 @@ public class MainActivity extends AppCompatActivity {
             };
             UserInfo userInfo=new UserInfo(this,mTencent.getQQToken());
             userInfo.getUserInfo(listener);
-            isLogin=true;
-            drawerLayout.setDrawerLockMode(DrawerLayout.LOCK_MODE_UNLOCKED);
         }else{
             headIconSmall.setImageResource(R.drawable.head_icon);
             headIconBig.setImageResource(R.drawable.head_icon);
