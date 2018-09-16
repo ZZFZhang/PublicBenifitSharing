@@ -12,6 +12,7 @@ import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.MenuItem;
 import android.view.View;
@@ -21,9 +22,9 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.publicbenifitsharing.android.adapter.MyFragmentPagerAdapter;
+import com.publicbenifitsharing.android.dynamicpage.DynamicPageFragment;
 import com.publicbenifitsharing.android.entityclass.TencentSession;
 import com.publicbenifitsharing.android.entityclass.TencentUserInfo;
-import com.publicbenifitsharing.android.viewpager.DynamicPage;
 import com.publicbenifitsharing.android.viewpager.HomePage;
 import com.publicbenifitsharing.android.viewpager.ProjectPage;
 import com.tencent.connect.UserInfo;
@@ -55,7 +56,7 @@ public class MainActivity extends AppCompatActivity {
 
     private HomePage homePageFragment;
     private ProjectPage projectPageFragment;
-    private DynamicPage dynamicPageFragment;
+    private DynamicPageFragment dynamicPageFragment;
     private List<Fragment> fragmentList;
     private MyFragmentPagerAdapter myFragmentPagerAdapter;
 
@@ -88,7 +89,7 @@ public class MainActivity extends AppCompatActivity {
 
         homePageFragment=new HomePage();
         projectPageFragment=new ProjectPage();
-        dynamicPageFragment=new DynamicPage();
+        dynamicPageFragment=new DynamicPageFragment();
         fragmentList=new ArrayList<>();
         fragmentList.add(homePageFragment);
         fragmentList.add(projectPageFragment);
@@ -359,7 +360,7 @@ public class MainActivity extends AppCompatActivity {
                     boolean returnedData=data.getBooleanExtra("data_return",false);
                     if (returnedData){
                         dynamicPageFragment.swipeRefreshLayout.setRefreshing(true);
-                        dynamicPageFragment.getDataFromServer();
+                        dynamicPageFragment.presenter.initDynamicData();
                         Toast.makeText(this, "发表成功", Toast.LENGTH_SHORT).show();
                     }
                 }

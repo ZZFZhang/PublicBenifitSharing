@@ -36,7 +36,6 @@ import com.publicbenifitsharing.android.entityclass.Dynamic;
 import com.publicbenifitsharing.android.entityclass.TencentUserInfo;
 import com.publicbenifitsharing.android.util.DBService;
 import com.publicbenifitsharing.android.util.MySQLDBOpenHelper;
-import com.publicbenifitsharing.android.viewpager.DynamicPage;
 
 import org.litepal.LitePal;
 
