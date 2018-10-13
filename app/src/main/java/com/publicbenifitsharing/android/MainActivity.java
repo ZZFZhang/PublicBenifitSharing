@@ -25,8 +25,10 @@ import com.publicbenifitsharing.android.adapter.MyFragmentPagerAdapter;
 import com.publicbenifitsharing.android.dynamicpage.DynamicPageFragment;
 import com.publicbenifitsharing.android.entityclass.TencentSession;
 import com.publicbenifitsharing.android.entityclass.TencentUserInfo;
+import com.publicbenifitsharing.android.projectpage.ProjectPageFragment;
+import com.publicbenifitsharing.android.util.DialogUtil;
+import com.publicbenifitsharing.android.util.ToastUtil;
 import com.publicbenifitsharing.android.viewpager.HomePage;
-import com.publicbenifitsharing.android.viewpager.ProjectPage;
 import com.tencent.connect.UserInfo;
 import com.tencent.connect.common.Constants;
 import com.tencent.tauth.IUiListener;
@@ -38,6 +40,7 @@ import org.litepal.LitePal;
 import org.litepal.crud.LitePalSupport;
 import org.w3c.dom.Text;
 
+import java.sql.Time;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -55,7 +58,7 @@ public class MainActivity extends AppCompatActivity {
     private TextView describe;
 
     private HomePage homePageFragment;
-    private ProjectPage projectPageFragment;
+    private ProjectPageFragment projectPageFragment;
     private DynamicPageFragment dynamicPageFragment;
     private List<Fragment> fragmentList;
     private MyFragmentPagerAdapter myFragmentPagerAdapter;
@@ -88,7 +91,7 @@ public class MainActivity extends AppCompatActivity {
         titleText.setText("益享公益");
 
         homePageFragment=new HomePage();
-        projectPageFragment=new ProjectPage();
+        projectPageFragment=new ProjectPageFragment();
         dynamicPageFragment=new DynamicPageFragment();
         fragmentList=new ArrayList<>();
         fragmentList.add(homePageFragment);
@@ -173,10 +176,21 @@ public class MainActivity extends AppCompatActivity {
             public boolean onNavigationItemSelected(@NonNull MenuItem item) {
                 switch (item.getItemId()){
                     case R.id.login_out:
-                        mTencent.logout(getApplicationContext());
-                        updateUserInfo();
-                        LitePal.deleteAll(TencentSession.class);
-                        LitePal.deleteAll(TencentUserInfo.class);
+                        drawerLayout.closeDrawers();
+                        DialogUtil.showQuitAccountDialog(MainActivity.this, new DialogUtil.CommonDialogCallback() {
+                            @Override
+                            public void onLeftClick() {
+
+                            }
+
+                            @Override
+                            public void onRightClick() {
+                                mTencent.logout(getApplicationContext());
+                                updateUserInfo();
+                                LitePal.deleteAll(TencentSession.class);
+                                LitePal.deleteAll(TencentUserInfo.class);
+                            }
+                        });
                         break;
                     case R.id.my_project:
                         Intent startMyProjectView=new Intent(MainActivity.this,MyProjectViewActivity.class);
@@ -359,7 +373,6 @@ public class MainActivity extends AppCompatActivity {
                 if (resultCode==RESULT_OK){
                     boolean returnedData=data.getBooleanExtra("data_return",false);
                     if (returnedData){
-                        dynamicPageFragment.swipeRefreshLayout.setRefreshing(true);
                         dynamicPageFragment.presenter.initDynamicData();
                         Toast.makeText(this, "发表成功", Toast.LENGTH_SHORT).show();
                     }
@@ -369,8 +382,7 @@ public class MainActivity extends AppCompatActivity {
                 if (resultCode==RESULT_OK){
                     boolean returnedData=data.getBooleanExtra("data_return",false);
                     if (returnedData){
-                        projectPageFragment.swipeRefresh.setRefreshing(true);
-                        projectPageFragment.getDataFromServer();
+                        projectPageFragment.presenter.initProjectData();
                         Toast.makeText(this, "发表成功", Toast.LENGTH_SHORT).show();
                     }
                 }
@@ -379,5 +391,20 @@ public class MainActivity extends AppCompatActivity {
                 break;
         }
         super.onActivityResult(requestCode, resultCode, data);
+    }
+
+    private long clickTime;
+    @Override
+    public void onBackPressed() {
+        if (drawerLayout.isDrawerOpen(GravityCompat.START)){
+            drawerLayout.closeDrawers();
+        }else{
+            if (System.currentTimeMillis()-clickTime<=2000){
+                super.onBackPressed();
+            }else {
+                clickTime=System.currentTimeMillis();
+                ToastUtil.toastCenter(this,"再按一次退出");
+            }
+        }
     }
 }

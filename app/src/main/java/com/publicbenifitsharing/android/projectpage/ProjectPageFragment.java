@@ -1,5 +1,6 @@
-package com.publicbenifitsharing.android.viewpager;
+package com.publicbenifitsharing.android.projectpage;
 
+import android.app.ProgressDialog;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
@@ -7,50 +8,36 @@ import android.support.v4.app.Fragment;
 import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
-import android.util.Log;
 import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.app.ProgressDialog;
 import android.widget.Toast;
 
-import com.bumptech.glide.Glide;
-import com.google.gson.Gson;
-import com.google.gson.reflect.TypeToken;
-import com.publicbenifitsharing.android.GlideApp;
-import com.publicbenifitsharing.android.MainActivity;
 import com.publicbenifitsharing.android.R;
 import com.publicbenifitsharing.android.adapter.ProjectRecycleViewAdapter;
 import com.publicbenifitsharing.android.entityclass.Project;
 import com.publicbenifitsharing.android.util.DBService;
-import com.publicbenifitsharing.android.util.HttpUtil;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-import okhttp3.Call;
-import okhttp3.Callback;
-import okhttp3.OkHttpClient;
-import okhttp3.Request;
-import okhttp3.Response;
-
-public class ProjectPage extends Fragment {
+public class ProjectPageFragment extends Fragment implements ProjectContact.ProjectView{
     public SwipeRefreshLayout swipeRefresh;
     private RecyclerView recyclerView;
     private ProjectRecycleViewAdapter adapter;
-    private ProgressDialog progressDialog;
 
     private List<Project> projectList=new ArrayList<>();
 
     public boolean isLoad=false;
     public static boolean reLoad=false;
+
+    public ProjectPresenter presenter;
     @Override
     public void setUserVisibleHint(boolean isVisibleToUser) {
         if (isVisibleToUser){
             if (!isLoad){
-                getDataFromServer();
+                presenter.initProjectData();
             }
         }
     }
@@ -65,6 +52,7 @@ public class ProjectPage extends Fragment {
         LinearLayoutManager layoutManager=new LinearLayoutManager(getContext());
         recyclerView.setLayoutManager(layoutManager);
         recyclerView.setAdapter(adapter);
+        presenter=new ProjectPresenter(getContext(),this);
         return view;
     }
 
@@ -75,7 +63,7 @@ public class ProjectPage extends Fragment {
         swipeRefresh.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
             @Override
             public void onRefresh() {
-                getDataFromServer();
+                presenter.initProjectData();
             }
         });
     }
@@ -83,34 +71,27 @@ public class ProjectPage extends Fragment {
     @Override
     public void onResume() {
         if (reLoad){
-            getDataFromServer();
+            presenter.initProjectData();
             reLoad=false;
         }
         super.onResume();
     }
 
-    public void getDataFromServer(){
+    @Override
+    public void openSwipeRefreshLayout() {
         swipeRefresh.setRefreshing(true);
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
-                projectList.clear();
-                DBService dbService=DBService.getDbService();
-                projectList.addAll(dbService.getProjectData());
-                getActivity().runOnUiThread(new Runnable() {
-                    @Override
-                    public void run() {
-                        adapter.notifyDataSetChanged();
-                        swipeRefresh.setRefreshing(false);
-                        if (projectList.size()==0){
-                            Toast toast=Toast.makeText(getContext(),"连接超时！",Toast.LENGTH_SHORT);
-                            toast.setGravity(Gravity.CENTER,0,0);
-                            toast.show();
-                        }
-                        isLoad=true;
-                    }
-                });
-            }
-        }).start();
+    }
+
+    @Override
+    public void cancelSwipeRefreshLayout() {
+        swipeRefresh.setRefreshing(false);
+    }
+
+    @Override
+    public void showProjectData(List<Project> projects) {
+        projectList.clear();
+        projectList.addAll(projects);
+        adapter.notifyDataSetChanged();
+        isLoad=true;
     }
 }

@@ -19,6 +19,7 @@ import android.support.v4.content.ContextCompat;
 import android.support.v4.content.FileProvider;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.support.v7.widget.CardView;
 import android.text.TextUtils;
 import android.util.Log;
 import android.view.Gravity;
@@ -35,6 +36,7 @@ import android.widget.Toast;
 import com.publicbenifitsharing.android.entityclass.Dynamic;
 import com.publicbenifitsharing.android.entityclass.TencentUserInfo;
 import com.publicbenifitsharing.android.util.DBService;
+import com.publicbenifitsharing.android.util.InputWindowUtil;
 import com.publicbenifitsharing.android.util.MySQLDBOpenHelper;
 
 import org.litepal.LitePal;
@@ -57,6 +59,7 @@ public class UploadDynamicActivity extends AppCompatActivity implements View.OnC
 
     private Button back;
     private TextView upload;
+    private CardView cardView;
     private EditText contentEdit;
     private ImageButton imageView;
 
@@ -73,11 +76,13 @@ public class UploadDynamicActivity extends AppCompatActivity implements View.OnC
         TextView titleText=(TextView) findViewById(R.id.title_text);
         back=(Button) findViewById(R.id.back);
         upload=(TextView) findViewById(R.id.upload);
+        cardView=(CardView) findViewById(R.id.card_view);
         contentEdit=(EditText) findViewById(R.id.content_edit);
         imageView=(ImageButton) findViewById(R.id.image_view);
         titleText.setText("发布动态");
         back.setOnClickListener(this);
         upload.setOnClickListener(this);
+        cardView.setOnClickListener(this);
         imageView.setOnClickListener(this);
     }
 
@@ -97,8 +102,12 @@ public class UploadDynamicActivity extends AppCompatActivity implements View.OnC
                     }
                 }).start();
                 break;
+            case R.id.card_view:
+                InputWindowUtil.hideInputWindow(this,cardView);
+                break;
             case R.id.image_view:
                 showChooseMenu();
+                InputWindowUtil.hideInputWindow(this,imageView);
                 break;
             default:
                 break;
